@@ -14,12 +14,11 @@ src/
 ├── Controller     — top level app entry, routes between visual and benchmark mode
 ├── AppConfig      — configuration struct for mode, bots, weights, tick speed
 ├── Benchmark      — headless multithreaded runner, CSV output
-└── Bots/
-    ├── RandomBot
-    ├── GreedyBot
-    ├── SearchBot
-    ├── ExpectimaxBot
-    └── MCTSBot
+├── RandomBot
+├── GreedyBot
+├── SearchBot
+├── ExpectimaxBot
+└── MCTSBot
 ```
 
 ---
@@ -67,7 +66,7 @@ At depth 6 this explores `4^6 = 4096` board states per move. Fast but blind to r
 ---
 
 ### ExpectimaxBot
-The strongest bot. Extends the search tree with **chance nodes** that model the random tile spawns probabilistically. The tree alternates between two node types:
+The strongest bot. Extends the search tree with **chance nodes** that model the random tile spawns statistically. The tree alternates between two node types:
 
 - **Max node** (player turn) — pick the direction with the highest expected score
 - **Chance node** (tile spawn) — for every empty cell, simulate spawning a 2 (90% probability) and a 4 (10% probability), recurse, and return the **probability-weighted average**
@@ -94,17 +93,17 @@ expectimax(board, depth, nodeType, probability):
         return totalScore
 ```
 
-The probability parameter enables **pruning** — branches whose cumulative probability drops below `0.0001` are skipped entirely. This allows deeper search on critical low-empty-cell positions (endgame) while pruning unlikely branches early on open boards.
+The probability parameter enables **pruning** — branches whose cumulative probability drops below fixed value 0.0001 are skipped entirely. This allows deeper search on critical low-empty-cell positions (endgame) while pruning unlikely branches early on open boards.
 
 At depth 4 with pruning, this explores thousands of weighted futures per move and picks the direction that performs best **on average across all realistic tile spawns** — not just in the best case.
 
 **Average score:** ~20,000  
-**Peak observed:** ~53,000+
+**Peak observed:** ~63,000+
 
 ---
 
 ### MCTSBot (Monte Carlo Tree Search)
-A fundamentally different approach. Instead of building an exhaustive tree, MCTS runs many **random playouts** from each candidate move within a fixed time budget and picks the move with the best average playout score.
+A very different approach compared to other bots. Instead of building an exhaustive tree, MCTS runs many **random playouts** from each candidate move within a **fixed time budget** and picks the move with the best average playout score.
 
 ```
 getNextMove:
@@ -124,7 +123,7 @@ simulate(board, maxDepth):
 
 Each playout plays 40 random moves from the candidate position and evaluates the result. Over many playouts the average converges toward the true expected value for that move.
 
-MCTS excels in games with huge branching factors (Go, Chess) where exhaustive search is impossible. In 2048 however the branching factor is only 4, making exhaustive probabilistic search (Expectimax) far more effective. MCTS is included for comparison and to illustrate why the algorithm choice matters.
+It is said that MCTS works best in games with huge branching factors where exhaustive search is impossible. In 2048 however the branching factor is only 4, making exhaustive probabilistic search (Expectimax) far more effective. MCTS is included for comparison and to illustrate why the algorithm choice matters.
 
 **Average score:** ~2,500
 
